@@ -3,6 +3,7 @@ GEM
   specs:
     buftok (0.1)
     curb (0.8.5)
+    daemons (1.1.9)
     faraday (0.8.8)
       multipart-post (~> 1.2.0)
     feedzirra (0.2.1)
@@ -35,6 +36,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  daemons
   feedzirra
   json
   twitter (~> 5.0.0.rc.1)
