@@ -8,7 +8,7 @@ options = {
   :dir        => "pids",
   :log_dir    => "logs",
   :multiple   => true,
-  :ontop      => true,
+  :ontop      => false,
   :backtrace  => true,
   :monitor    => true
 }
