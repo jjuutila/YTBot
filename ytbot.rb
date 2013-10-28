@@ -7,7 +7,7 @@ require "logger"
 
 SECONDS_BETWEEN_FEED_POLLING = 60
 
-logger = Logger.new("ytbot.log", 10, 1024000)
+logger = Logger.new(File.join(__dir__, "log/ytbot.log"), 10, 1024000)
 logger.datetime_format = "%Y-%m-%d %H:%M:%S"
 
 def remove_source_name title
@@ -24,7 +24,7 @@ class EntryHistory
   def include_title? title
     @contents.any? {|entry| entry[:title] == title}
   end
-  
+
   def push entry
     if @contents.length == @max_size
       @contents.shift
@@ -33,6 +33,7 @@ class EntryHistory
     @contents.push(entry)
   end
 end
+
 
 options = YAML::load_file(File.join(__dir__, "config.yml"))
 client = Twitter::REST::Client.new do |config|
