@@ -34,7 +34,6 @@ class EntryHistory
   end
 end
 
-
 options = YAML::load_file(File.join(__dir__, "config.yml"))
 client = Twitter::REST::Client.new do |config|
   config.consumer_key        = options["consumer_key"]
@@ -49,7 +48,7 @@ logger.info("Starting main loop")
 
 while true do
   begin
-    feed = Feedzirra::Feed.fetch_and_parse("http://feeds.feedburner.com/ampparit-kotimaa")
+    feed = Feedzirra::Feed.fetch_and_parse("http://feeds.feedburner.com/ampparit-kaikki-eibb")
 
     feed.entries.each_entry do |entry|
       titleWithoutSource = remove_source_name(entry.title)
