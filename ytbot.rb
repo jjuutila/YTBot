@@ -21,8 +21,8 @@ class EntryHistory
     @contents = []
   end
 
-  def include_title? title
-    @contents.any? {|entry| entry[:title] == title}
+  def include_match? match
+    @contents.any? {|entry| entry[:match] == match}
   end
 
   def push entry
@@ -52,12 +52,12 @@ while true do
 
     feed.entries.each_entry do |entry|
       titleWithoutSource = remove_source_name(entry.title)
-
-      if entry.title.downcase.include?("aloittaa yt-neuvottelut") && !history.include_title?(titleWithoutSource)
+      m = /^(.+) aloittaa YT-neuvottelut/i.match(titleWithoutSource)
+      if m and !history.include_match?(m[0])
         tweet_content = "#{titleWithoutSource} #{entry.url}"
         logger.info("Sending Twitter update: #{tweet_content}")
         client.update(tweet_content)
-        posted_entry = {title: titleWithoutSource, url: entry.url, posted_at: DateTime.now}
+        posted_entry = {title: titleWithoutSource, url: entry.url, posted_at: DateTime.now, match: m[0]}
         history.push(posted_entry)
       end
     end
