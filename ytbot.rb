@@ -63,7 +63,7 @@ while true do
     end
   rescue Twitter::Error::ClientError => te
     logger.error("Sending Twitter update failed: #{te.message}")
-  rescue Exception => e
+  rescue => e
     logger.error("Unexpected error: \"#{e.message}\" stacktrace: #{e.backtrace}")
   ensure
     sleep(SECONDS_BETWEEN_FEED_POLLING)
