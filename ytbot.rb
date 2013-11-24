@@ -10,19 +10,29 @@ SECONDS_BETWEEN_FEED_POLLING = 60
 logger = Logger.new(File.join(__dir__, "log/ytbot.log"), 10, 1024000)
 logger.datetime_format = "%Y-%m-%d %H:%M:%S"
 
-def remove_source_name title
-  index = title.rindex("(")
-  title.slice(0, index).strip()
+def create_tweet_text entry
+  index = entry.title.rindex("(")
+  title_without_source = entry.title.slice(0, index).strip()
+  "#{title_without_source} #{entry.url}"
+end
+
+def maybe_create_entry text, created_at = Time.now
+  m = /^(.+) aloittaa YT-neuvottelut/i.match(text)
+  if m
+    {content: text, created_at: created_at, match: m[0]}
+  else
+    nil
+  end
 end
 
 class EntryHistory
-  def initialize max_size = 100
+  def initialize initial_contents = [], max_size = 100
     @max_size = max_size
-    @contents = []
+    @contents = initial_contents
   end
 
-  def include_match? match
-    @contents.any? {|entry| entry[:match] == match}
+  def include_match? entry
+    @contents.any? {|existing_entry| existing_entry[:match] == entry[:match]}
   end
 
   def push entry
@@ -42,8 +52,9 @@ client = Twitter::REST::Client.new do |config|
   config.access_token_secret = options["access_token_secret"]
 end
 
-history = EntryHistory.new
-
+recent_entries = client.user_timeline.map{|tweet| maybe_create_entry(tweet.text, tweet.created_at)}.reject{|entry| entry.nil?}.take(20)
+history = EntryHistory.new recent_entries
+logger.info("Loaded #{recent_entries.length} tweets")
 logger.info("Starting main loop")
 
 while true do
@@ -51,14 +62,11 @@ while true do
     feed = Feedzirra::Feed.fetch_and_parse("http://feeds.feedburner.com/ampparit-kaikki-eibb")
 
     feed.entries.each_entry do |entry|
-      titleWithoutSource = remove_source_name(entry.title)
-      m = /^(.+) aloittaa YT-neuvottelut/i.match(titleWithoutSource)
-      if m and !history.include_match?(m[0])
-        tweet_content = "#{titleWithoutSource} #{entry.url}"
-        logger.info("Sending Twitter update: #{tweet_content}")
-        client.update(tweet_content)
-        posted_entry = {title: titleWithoutSource, url: entry.url, posted_at: DateTime.now, match: m[0]}
-        history.push(posted_entry)
+      entry = maybe_create_entry(create_tweet_text(entry))
+      if entry and !history.include_match?(entry)
+        logger.info("Sending Twitter update: #{entry[:content]}")
+        client.update(entry[:content])
+        history.push(entry)
       end
     end
   rescue Twitter::Error::ClientError => te
