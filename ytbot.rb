@@ -69,7 +69,7 @@ while true do
         history.push(entry)
       end
     end
-  rescue Twitter::Error::ClientError => te
+  rescue Twitter::Error => te
     logger.error("Sending Twitter update failed: #{te.message}")
   rescue => e
     logger.error("Unexpected error: \"#{e.message}\" stacktrace: #{e.backtrace}")
