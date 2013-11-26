@@ -18,7 +18,7 @@ end
 
 def maybe_create_entry text, created_at = Time.now
   m = /^(.+) aloittaa YT-neuvottelut/i.match(text)
-  m ||= /^(.+) irtisanoo(.+)(\d+)/i.match(text)
+  m ||= /^(.+) irtisanoo(.*)( +)(\d+)/i.match(text)
   if m
     {content: text, created_at: created_at, match: m[0]}
   else
