@@ -33,7 +33,7 @@ class EntryHistory
   end
 
   def include_match? entry
-    @contents.any? {|existing_entry| existing_entry[:match] == entry[:match]}
+    @contents.any? {|existing_entry| existing_entry[:match].downcase == entry[:match].downcase}
   end
 
   def push entry
