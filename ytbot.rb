@@ -60,15 +60,19 @@ logger.info("Starting main loop")
 
 while true do
   begin
-    feed = Feedzirra::Feed.fetch_and_parse("http://feeds.feedburner.com/ampparit-kaikki-eibb")
+    feed_or_error = Feedzirra::Feed.fetch_and_parse("http://feeds.feedburner.com/ampparit-kaikki-eibb")
 
-    feed.entries.each_entry do |entry|
-      entry = maybe_create_entry(create_tweet_text(entry))
-      if entry and !history.include_match?(entry)
-        logger.info("Sending Twitter update: #{entry[:content]}")
-        client.update(entry[:content])
-        history.push(entry)
+    unless feed_or_error.is_a? Fixnum
+      feed_or_error.entries.each_entry do |entry|
+        entry = maybe_create_entry(create_tweet_text(entry))
+        if entry and !history.include_match?(entry)
+          logger.info("Sending Twitter update: #{entry[:content]}")
+          client.update(entry[:content])
+          history.push(entry)
+        end
       end
+    else
+      logger.error("Fetching news feed failed with response code #{feed_or_error}")
     end
   rescue Twitter::Error => te
     logger.error("Sending Twitter update failed: #{te.message}")
