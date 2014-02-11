@@ -4,16 +4,20 @@ require "twitter"
 require "feedzirra"
 require "yaml"
 require "logger"
+require "httparty"
 
 SECONDS_BETWEEN_FEED_POLLING = 60
 
 logger = Logger.new(File.join(__dir__, "log/ytbot.log"), 10, 1024000)
 logger.datetime_format = "%Y-%m-%d %H:%M:%S"
 
-def create_tweet_text entry
-  index = entry.title.rindex("(")
-  title_without_source = entry.title.slice(0, index).strip()
-  "#{title_without_source} #{entry.url}"
+def create_tweet_text title_without_source, url
+  "#{title_without_source} #{url}"
+end
+
+def strip_news_source feed_entry
+  news_source_tag_index = feed_entry.title.rindex("(")
+  feed_entry.title.slice(0, news_source_tag_index).strip()
 end
 
 def maybe_create_entry text, created_at = Time.now
@@ -63,11 +67,16 @@ while true do
     feed_or_error = Feedzirra::Feed.fetch_and_parse("http://feeds.feedburner.com/ampparit-kaikki-eibb")
 
     unless feed_or_error.is_a? Fixnum
-      feed_or_error.entries.each_entry do |entry|
-        entry = maybe_create_entry(create_tweet_text(entry))
+      feed_or_error.entries.each_entry do |feed_entry|
+        title_without_source = strip_news_source(feed_entry)
+        entry = maybe_create_entry(title_without_source)
         if entry and !history.include_match?(entry)
-          logger.info("Sending Twitter update: #{entry[:content]}")
-          client.update(entry[:content])
+          logger.info("Resolve redirect address: #{feed_entry.url}")
+          url = HTTParty.get(feed_entry.url, {follow_redirects: false}).headers["location"]
+
+          tweet_text = create_tweet_text(title_without_source, url)
+          logger.info("Sending Twitter update: #{tweet_text}")
+          client.update(tweet_text)
           history.push(entry)
         end
       end
